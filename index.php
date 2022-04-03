@@ -1,5 +1,40 @@
 <?php
 session_start();
+require_once("_includes/connect_db.class.php");
+$state = "ok";
+
+$pdo = DB::connect();
+
+if ($_POST) {
+    if ($_POST['user']=="" && $_POST['pass']=="") {
+        echo "<h2 class='text-center'>Žádné údaje</h2>";
+    } else {
+        $username = $_POST['user'];
+        $password = $_POST['pass'];
+
+        $query = 'SELECT `login`, `password`, `admin`, employee_id FROM employee WHERE `login`=:username';
+        $stmt = $pdo->prepare($query);
+        $stmt->execute(["username" => $username]);
+
+        $data = $stmt->fetch();
+
+        if ($data) {
+            if ($username == $data->login && $password == $data->password) {
+
+                //echo "prihlasen";
+                $_SESSION['user'] = $username;
+                $_SESSION['password'] = $password;
+                $_SESSION['admin'] = $data->admin;
+                $_SESSION['employee_id'] = $data->employee_id;
+                header('Location: prohlizec.php');
+            } else {
+                echo "<h2 class='text-center'>Špatné údaje</h2>";
+            }
+        } else {
+            echo "<h2 class='text-center'>Špatné údaje</h2>";
+        }
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -27,46 +62,3 @@ session_start();
 </body>
 
 </html>
-
-<?php
-require_once("_includes/connect_db.class.php");
-$state = "ok";
-
-$pdo = DB::connect();
-
-if ($_POST) {
-    if ($_POST['user']=="" && $_POST['pass']=="") {
-        echo "<h2 class='text-center'>Žádné údaje</h2>";
-    } else {
-        $username = $_POST['user'];
-        $password = $_POST['pass'];
-
-        $query = 'SELECT `login`, `password`, `admin`, employee_id FROM employee WHERE `login`=:username';
-        $stmt = $pdo->prepare($query);
-        $stmt->execute(["username" => $username]);
-
-        if ($stmt->rowCount() == 0) {
-            http_response_code(404);
-            $state = "NotFound";
-        }
-
-        $data = $stmt->fetch();
-
-        if ($data) {
-            if ($username == $data->login && $password == $data->password) {
-
-                //echo "prihlasen";
-                $_SESSION['user'] = $username;
-                $_SESSION['password'] = $password;
-                $_SESSION['admin'] = $data->admin;
-                $_SESSION['employee_id'] = $data->employee_id;
-                header('Location: prohlizec.php');
-            } else {
-                echo "<h2 class='text-center'>Špatné údaje</h2>";
-            }
-        } else {
-            echo "<h2 class='text-center'>Špatné údaje</h2>";
-        }
-    }
-}
-?>
